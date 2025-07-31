@@ -1,26 +1,43 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  context.subscriptions.push(
+    vscode.commands.registerCommand('monaco-webview-extension.openEditor', () => {
+      const panel = vscode.window.createWebviewPanel(
+        'monacoEditor',
+        'Monaco Webview Editor',
+        vscode.ViewColumn.One,
+        {
+          enableScripts: true,
+          localResourceRoots: [
+            vscode.Uri.file(path.join(context.extensionPath, 'webview', 'public'))
+          ]
+        }
+      );
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "monaco-webview-extension" is now active!');
+      const scriptUri = panel.webview.asWebviewUri(
+        vscode.Uri.file(path.join(context.extensionPath, 'webview', 'public', 'bundle.js'))
+      );
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('monaco-webview-extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from monaco-webview-extension!');
-	});
-
-	context.subscriptions.push(disposable);
+      const html = getWebviewHtml(scriptUri);
+      panel.webview.html = html;
+    })
+  );
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+function getWebviewHtml(scriptUri: vscode.Uri) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monaco Editor</title>
+</head>
+<body style="margin:0; padding:0;">
+  <div id="root"></div>
+  <script src="${scriptUri}"></script>
+</body>
+</html>`;
+}
